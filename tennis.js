@@ -18,8 +18,8 @@ var BallH=
 {
     PosX : 200,
     PosY : 150,
-    SpeedX : 4,
-    SpeedY : 3,
+    SpeedX : 5,
+    SpeedY : 4,
     Width : 80,
     Height: 100,
     Update : function()
@@ -61,7 +61,15 @@ var Racket2=
 }
 
 function Start(){
-    tichInterval = setInterval(Tick,40);
+    if(tichInterval) {
+        BallH.PosX = settings.PositionX;
+        BallH.PosY = settings.PositionY;
+        BallH.Update();
+        clearInterval(tichInterval);
+        tichInterval = 0;
+    } else {
+        tichInterval = setInterval(Tick,40);
+    }
 }
 
 function RacketMove(){
@@ -114,6 +122,7 @@ function Tick(){
         BallH.PosY = settings.PositionY;
         BallH.Update();
         clearInterval(tichInterval);
+        tichInterval = 0;
     }
 
     BallH.PosY+=BallH.SpeedY;
