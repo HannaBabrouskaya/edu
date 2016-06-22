@@ -128,13 +128,11 @@ function clockView() {
     this.init = function(model, field, _id) {
         myModel = model;
         myField = field;
-
         var id = _id;
 
         draw();
 
-        console.log(localStorage.getItem(id));
-        if( localStorage.getItem(id) == 2) {
+        if( localStorage.getItem(id) == 1) {
             myModel.updateView();
         }
     }
@@ -153,7 +151,7 @@ function clockController() {
         var startButton = myField.querySelector('.startButton');
 
         startButton.addEventListener('click', function() {
-            myModel.setStatus(2);
+            myModel.setStatus(1);
             localStorage.setItem(id,JSON.stringify(myModel.getStatus()));
             tick = setInterval(myModel.updateView, 1000);
         });
@@ -167,7 +165,7 @@ function clockController() {
         var stopButton = myField.querySelector('.stopButton');
 
         stopButton.addEventListener('click', function() {
-            myModel.setStatus(3);
+            myModel.setStatus(0);
             localStorage.removeItem(id);
             clearInterval(tick);
         });
@@ -201,7 +199,7 @@ var clockArray = [
     },
 ]
 
-function initializeClocks(_clockArray) {
+function initializeWatches(_clockArray) {
     var mainDiv = [],
         c = [],
         v = [],
@@ -223,5 +221,5 @@ function initializeClocks(_clockArray) {
 }
 
 window.onload = function() {
-    initializeClocks(clockArray);
+    initializeWatches(clockArray);
 }
