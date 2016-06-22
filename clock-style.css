@@ -1,0 +1,49 @@
+.clocks {
+    height: 500px;
+    margin: 25px auto;
+    position: relative;
+    width: 500px;
+    background-color: #FBC968;
+    border: 1px solid #000;
+    border-radius: 250px;
+}
+.electroClock {
+    position: absolute;
+    top: 40%;
+    left: 38%;
+    font-size: 30px;
+}
+.divisions {
+    border: 1px solid #000;
+    height: 70px;
+    width: 70px;
+    border-radius: 35px;
+    position: absolute;
+    text-align: center;
+    font-size: 36px;
+    line-height: 2;
+    background-color: #46B282;
+}
+.arrows {
+    background-color: #000;
+    position: absolute;
+    transform-origin: bottom;
+    left: 250px;
+}
+.hourArrow {
+    height: 100px;
+    width: 10px;
+}
+.minuteArrow {
+    height: 150px;
+    width: 5px;
+}
+.secArrow {
+    height: 200px;
+    width: 3px;
+}
+.clockWrapper {
+    border: 1px solid #000;
+    width: 500px;
+    display: inline-block;
+}
