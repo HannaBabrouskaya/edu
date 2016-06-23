@@ -172,54 +172,53 @@ function clockController() {
     }
 }
 
-var clockArray = [
-    {
-        timeZone: "-5",
-        name: 'Нью-Йорк'
-    },
-    {
-        timeZone: "0",
-        name: 'Лондон'
-    },
-    {
-        timeZone: "1",
-        name: 'Берлин'
-    },
-    {
-        timeZone: "3",
-        name: 'Минск'
-    },
-    {
-        timeZone: "9",
-        name: 'Токио'
-    },
-    {
-        timeZone: "10",
-        name: 'Владивосток'
-    },
-]
-
-function initializeWatches(_clockArray) {
-    var mainDiv = [],
-        c = [],
-        v = [],
-        contr = [];
-
-    _clockArray.forEach(function(item, index, array) {
-        mainDiv.index = document.createElement('div');
-        document.body.appendChild(mainDiv.index);
-
-        c.index = new clockModel(item.timeZone, item.name);
-        v.index = new clockView();
-        contr.index = new clockController();
-        c.index.init(v.index);
-        v.index.init(c.index, mainDiv.index, "c"+index);
-        contr.index.start(c.index, mainDiv.index, "c"+index);
-        contr.index.stop(c.index, mainDiv.index, "c"+index);
-    });
-
-}
-
 window.onload = function() {
+    var clockArray = [
+        {
+            timeZone: "-5",
+            name: 'Нью-Йорк'
+        },
+        {
+            timeZone: "0",
+            name: 'Лондон'
+        },
+        {
+            timeZone: "1",
+            name: 'Берлин'
+        },
+        {
+            timeZone: "3",
+            name: 'Минск'
+        },
+        {
+            timeZone: "9",
+            name: 'Токио'
+        },
+        {
+            timeZone: "10",
+            name: 'Владивосток'
+        }
+    ]
+
+    function initializeWatches(_clockArray) {
+        var mainDiv = [],
+            modelClock = [],
+            viewClock = [],
+            contrClock = [];
+
+        _clockArray.forEach(function(item, index, array) {
+            mainDiv.index = document.createElement('div');
+            document.body.appendChild(mainDiv.index);
+
+            modelClock.index = new clockModel(item.timeZone, item.name);
+            viewClock.index = new clockView();
+            contrClock.index = new clockController();
+            modelClock.index.init(viewClock.index);
+            viewClock.index.init(modelClock.index, mainDiv.index, "c"+index);
+            contrClock.index.start(modelClock.index, mainDiv.index, "c"+index);
+            contrClock.index.stop(modelClock.index, mainDiv.index, "c"+index);
+        });
+    }
+
     initializeWatches(clockArray);
 }
