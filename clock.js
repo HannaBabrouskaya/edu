@@ -1,12 +1,9 @@
-function clockModel( _tz, _city) {
+function clockModel( _tz, _city, _id) {
     var city = _city;
     var tz = _tz;
-    var status;
+    var status = 1;
     var myView = null;
-
-    this.init = function(view) {
-        myView = view;
-    }
+    var id = _id;
 
     this.getCity = function() {
         return city;
@@ -16,13 +13,34 @@ function clockModel( _tz, _city) {
         return tz;
     }
 
-    this.setStatus = function(s) {
-        status = s;
-    }
+    this.init = function (view) {
+        myView = view;
 
-    this.getStatus = function(){
+        if (localStorage.getItem(id) == undefined) {
+            localStorage.setItem(id, status);
+        } else {
+            this.setStatus(Number(localStorage.getItem(id)));
+        }
+
+    };
+
+    this.getView = function () {
+        return myView;
+    };
+
+    this.updateView=function() {
+        if ( myView )
+            myView.update();
+    };
+
+    this.setStatus = function (s) {
+        status = s;
+        localStorage.setItem(id, status);
+    };
+
+    this.getStatus = function () {
         return status;
-    }
+    };
 
     this.getCurrentDate = function(f) {
         var c = new Date(Date.now() + tz * 1000 * 60 * 60);
@@ -52,8 +70,16 @@ function clockView() {
         minuteArrowObj = document.createElement('div'),
         secArrowObj = document.createElement('div'),
         electroClock = document.createElement('div'),
-        stopButton = document.createElement('button'),
-        startButton = document.createElement('button');
+        pause = document.createElement('button'),
+        resume = document.createElement('button');
+
+    this.getPause = function () {
+        return pause;
+    }
+
+    this.getResume = function () {
+        return resume;
+    }
 
     function draw() {
         var clockObj = document.createElement('div');
@@ -62,12 +88,12 @@ function clockView() {
 
         myField.className = 'clockWrapper';
         myField.appendChild(clockObj);
-        myField.insertBefore(stopButton, clockObj);
-        myField.insertBefore(startButton, clockObj);
+        myField.insertBefore(pause, clockObj);
+        myField.insertBefore(resume, clockObj);
         myField.insertBefore(timeWrap, clockObj);
 
-        stopButton.innerHTML = "стоп";
-        startButton.innerHTML = "старт";
+        pause.innerHTML = "стоп";
+        resume.innerHTML = "старт";
 
         timeWrap.innerHTML = ' ' + myModel.getCity() + ' ' + '(' + 'GMT' + ' ' +
             ((myModel.getTz() < 0) ? myModel.getTz() :
@@ -78,8 +104,8 @@ function clockView() {
         minuteArrowObj.classList.add("arrows", "minuteArrow");
         secArrowObj.classList.add("arrows", "secArrow");
         electroClock.classList.add("electroClock");
-        stopButton.classList.add("stopButton");
-        startButton.classList.add("startButton");
+        pause.classList.add("stopButton");
+        resume.classList.add("startButton");
 
         var clockRadius = parseInt(getComputedStyle(clockObj).width) / 2;
         secArrowObj.style.bottom = clockRadius - secArrowObj.offsetHeight + "px";
@@ -107,7 +133,7 @@ function clockView() {
         clockObj.appendChild(electroClock);
     }
 
-    this.update = function() {
+    function updateClockArrows() {
         for (var n = 1; n <= 59; n++) {
             var hours = myModel.getCurrentDate("h");
             var minutes = myModel.getCurrentDate("m");
@@ -125,16 +151,18 @@ function clockView() {
         }
     }
 
-    this.init = function(model, field, _id) {
+    this.update = function () {
+        if (myModel.getStatus()) {
+            updateClockArrows();
+        }
+    };
+
+    this.init = function(model, field) {
         myModel = model;
         myField = field;
-        var id = _id;
 
         draw();
-
-        if( localStorage.getItem(id) == 1) {
-            myModel.updateView();
-        }
+        updateClockArrows()
     }
 }
 
@@ -143,32 +171,25 @@ function clockController() {
     var myField = null; // внутри какого элемента DOM наша вёрстка
     var tick;
 
-    this.start = function(model, field, _id) {
+    this.init = function(model, field) {
         myModel = model;
         myField = field;
 
-        var id = _id;
-        var startButton = myField.querySelector('.startButton');
+        var pauseButton = myModel.getView().getPause();
+        var resumeButton = myModel.getView().getResume();
 
-        startButton.addEventListener('click', function() {
-            myModel.setStatus(1);
-            localStorage.setItem(id,JSON.stringify(myModel.getStatus()));
-            tick = setInterval(myModel.updateView, 1000);
-        });
+        pauseButton.addEventListener('click', this.pause, false);
+        resumeButton.addEventListener('click', this.resume, false);
+
+        tick = setInterval(myModel.updateView, 1000);
+    };
+
+    this.pause = function () {
+        myModel.setStatus(0);
     }
 
-    this.stop = function(model, field, _id) {
-        myModel = model;
-        myField = field;
-
-        var id = _id;
-        var stopButton = myField.querySelector('.stopButton');
-
-        stopButton.addEventListener('click', function() {
-            myModel.setStatus(0);
-            localStorage.removeItem(id);
-            clearInterval(tick);
-        });
+    this.resume = function () {
+        myModel.setStatus(1);
     }
 }
 
@@ -210,15 +231,15 @@ window.onload = function() {
             mainDiv.index = document.createElement('div');
             document.body.appendChild(mainDiv.index);
 
-            modelClock.index = new clockModel(item.timeZone, item.name);
+            modelClock.index = new clockModel(item.timeZone, item.name, "c"+index);
             viewClock.index = new clockView();
             contrClock.index = new clockController();
             modelClock.index.init(viewClock.index);
-            viewClock.index.init(modelClock.index, mainDiv.index, "c"+index);
-            contrClock.index.start(modelClock.index, mainDiv.index, "c"+index);
-            contrClock.index.stop(modelClock.index, mainDiv.index, "c"+index);
+            viewClock.index.init(modelClock.index, mainDiv.index);
+            contrClock.index.init(modelClock.index, mainDiv.index);
         });
     }
 
     initializeWatches(clockArray);
 }
+
