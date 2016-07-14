@@ -1,0 +1,4 @@
+[
+	{"tag": "input", "placeholder": "Email", "label": "Email", "type": "email"},
+	{"tag": "input", "placeholder": "Password", "label": "Password", "type": "password"}
+]
