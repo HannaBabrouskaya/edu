@@ -3,8 +3,10 @@ function logoDesignModel() {
     var view = null;
     this.NewStateH = '';
     this.articleId;
-    this.filterState - '';
-    this.filterName- '';
+    // this.filterState - '';
+    // this.filterName- '';
+
+    this.UserLogged = false;
 
     this.init = function(myView) {
         view = myView;
@@ -29,8 +31,7 @@ function logoDesignModel() {
         );
     }
 
-    this.LoginRequest = function(inputsArrayValue) {
-        console.log("ggggssss");
+    this.ContactFormRequest = function(inputsArrayValue) {
         var AjaxHandler = "http://fe.it-academy.by/AjaxStringStorage2.php";
         var UpdateNumber = Math.floor(Math.random());
         $.ajax(
@@ -41,10 +42,71 @@ function logoDesignModel() {
                 data : { f : 'INSERT', n : 'BOBROVSKAYA_FORM'+ UpdateNumber +'',
                 v : JSON.stringify(inputsArrayValue) },
                 cache : false,
-                success : this.LoginReady,
+                success : this.ContactFormReady,
                 error : this.ErrorHandler
             }
         );
+    }
+
+    this.LoginRequest = function(inputsArrayValue) {
+        var name = inputsArrayValue[0];
+        JSON.stringify(name);
+        var res = name.replace(".", "").replace('@', '');
+        name = res;
+        var AjaxHandler = "http://fe.it-academy.by/AjaxStringStorage2.php";
+        $.ajax(
+            {
+                url : AjaxHandler,
+                type : 'POST',
+                dataType : 'JSON',
+                data : { f : 'READ', n : name,
+                v : JSON.stringify(inputsArrayValue) },
+                cache : false,
+                success : this.LoginFormReady,
+                error : this.ErrorHandler
+            }
+        );
+    }
+
+    this.LoginFormReady = function(data) {
+        view.loginCorrect(data);
+    }
+
+    this.RegistartionRequest = function(inputsArrayValue) {
+        var name = inputsArrayValue[0];
+        var pass = inputsArrayValue[1];
+        var passRepeat = inputsArrayValue[2];
+        if(pass == passRepeat && pass.length > 4) {
+            JSON.stringify(name);
+            var res = name.replace(".", "").replace('@', '');
+            name = res;
+            var AjaxHandler = "http://fe.it-academy.by/AjaxStringStorage2.php";
+            $.ajax(
+                {
+                    url : AjaxHandler,
+                    type : 'POST',
+                    dataType : 'JSON',
+                    data : { f : 'INSERT', n : name,
+                    v : JSON.stringify(pass) },
+                    cache : false,
+                    success : this.RegistrationFormReady,
+                    error : this.ErrorHandler
+                }
+            );
+        } else if (pass !== passRepeat) {
+            view.RegistrationError("Passwords dismatch");
+        } else {
+            view.RegistrationError("Password min length is 5");
+        }
+    }
+
+    this.RegistrationFormReady = function(data) {
+        if(data.result !== 'OK') {
+            var errorText = "User with such email address already has been created";
+            view.RegistrationError(errorText);
+        } else {
+            view.regCorrect(data);
+        }
     }
 
     this.FormReady = function(data) {
@@ -55,11 +117,14 @@ function logoDesignModel() {
         view.loginFormDraw(form);
     }
 
-    this.LoginReady = function() {
+    this.ContactFormReady = function() {
         console.log("aaaaaa");
     }
 
     this.FormRequest = function() {
+        if (this.articleId == 'logout') {
+            this.articleId = 'login';
+        }
         var AjaxHandler = "https://dl.dropboxusercontent.com/u/75254542/"+this.articleId+".json";
         $.ajax(
             {
@@ -245,6 +310,9 @@ function logoDesignView() {
                 workList.appendChild(this.newWorkItem);
                 this.newWorkItem.appendChild(this.newWorkLink);
             }
+            if(model.UserLogged == false) {
+                this.newWorkItem.addEventListener('click', that.workInfoShow);
+            }
             var rating = document.createElement('div');
             rating.classList.add('star-rating');
             var input = document.createElement('input');
@@ -279,6 +347,32 @@ function logoDesignView() {
             that.articleDraw(article);
         }
         alfFilter.addEventListener('click', that.filterChange);
+    }
+
+    this.workInfoShow = function(event) {
+        event.preventDefault();
+
+        var lightBoxBg = document.createElement('div');
+        var lightBox = document.createElement('div');
+        var body = document.body;
+        body.style.overflow = 'hidden';
+        lightBoxBg.classList.add('boxBg');
+        lightBox.classList.add('box');
+        lightBox.innerHTML = '<span>Please login to view logo info</span><a href="#login" class="login-link btn">Login here</a>'
+
+        body.appendChild(lightBoxBg);
+        body.appendChild(lightBox);
+
+        var loginLink = document.querySelector(".login-link");
+        loginLink.addEventListener('click', function() {
+            lightBoxBg.remove(); 
+            lightBox.remove();
+        });
+
+        lightBoxBg.addEventListener('click', function() { 
+            lightBoxBg.remove(); 
+            lightBox.remove();
+        })
     }
 
 
@@ -326,7 +420,6 @@ function logoDesignView() {
     };
 
     this.showWorkLogos = function(array) {
-        console.log(array);
         var workLogo = main.querySelector('.logo-image');
         var workLogosSlider = main.querySelector('.logo-variations');
         var workLogos = main.querySelectorAll('.logo-variations li');
@@ -381,6 +474,13 @@ function logoDesignView() {
                 newlistItem.appendChild(link);
             }
         }
+        if(model.UserLogged == true) {
+            console.log("lljo");
+            var loginLink = document.querySelector("a[href='#login']");
+            loginLink.innerHTML = "";
+            loginLink.innerHTML = "Logout";
+            loginLink.href = "#logout";
+        }
     }
 
     this.menuState = function() {
@@ -402,6 +502,8 @@ function logoDesignView() {
         var form = document.createElement('form');
         var regLink = document.createElement('a');
         var photoBlock = document.createElement('div');
+        this.errorBlock = document.createElement('div');
+        this.errorBlock.classList.add('error');
         photoBlock.classList.add('photo');
         form.classList.add('form-horizontal');
         newForm.classList.add('row');
@@ -414,8 +516,8 @@ function logoDesignView() {
                 
                     var newInput = document.createElement(data[i][key]);
                     var label = document.createElement('label');
-                    newInput.classList.add('form-control');    
-                  
+                    newInput.classList.add('form-control');
+                    newInput.setAttribute('required', 'true');    
                 }
                 if (key == "label") {
                     label.innerHTML = data[i][key];
@@ -431,14 +533,17 @@ function logoDesignView() {
             form.appendChild(newInput);
         }
 
+        form.appendChild(this.errorBlock);
         var button = form.querySelector('button');
         
         if(model.articleId == 'login') {
+            form.classList.add('login-form');
             button.innerHTML = 'login';
-            formWrap.innerHTML += '<h2>Login</h2><span>Thank you for your visit! </span><span>Please, login to view more information</span>';
+            formWrap.innerHTML += '<div claass="form-title"><h2>Login</h2><span>Thank you for your visit! </span><span>Please, login to view more information</span></div>';
         } else if (model.articleId == 'registration') {
+            form.classList.add('registration-form');
             button.innerHTML = 'registration';
-            formWrap.innerHTML += '<h2>Registration</h2><span>Thank you for your visit!</span>'+'\&nbsp;'+'<span>Please, register to view more information</span>';
+            formWrap.innerHTML += '<div claass="form-title"><h2>Registration</h2><span>Thank you for your visit!</span>'+'\&nbsp;'+'<span>Please, register to view more information</span><div>';
         }
             formWrap.appendChild(form);
             newForm.appendChild(formWrap);
@@ -463,27 +568,38 @@ function logoDesignView() {
                 that.getInputsValue(loginForm);
                 return false;
         });
+            console.log(model.UserLogged);
+        if(model.UserLogged == true) {
+            console.log(model.UserLogged);
+            formWrap.innerHTML = "<span class='logout-note'>Thank you for your visit! See you soon</span><a href='' class='btn logout'>Logout</a>";
+            var logoutBtn = main.querySelector(".logout");
+            logoutBtn.addEventListener('click', function() { localStorage.removeItem("logged") });
+        }
     }
 
-    this.getInputsValue = function(loginForm) {
+    this.getInputsValue = function(formItem) {
         var inputsArrayValue = [];
-        var inputsArray = loginForm.querySelectorAll('input, textarea');
+        var inputsArray = formItem.querySelectorAll('input, textarea');
         for(i=0; i < inputsArray.length; i++) {
             inputsArrayValue.push(inputsArray[i].value);
-            console.log("inputsArray[i]", inputsArray[i].value);
         }
-        console.log(inputsArrayValue);
-        model.LoginRequest(inputsArrayValue);
+        if(formItem.classList.contains('login-form') ) {
+            model.LoginRequest(inputsArrayValue);
+        } else if (formItem.classList.contains('registration-form') ) {
+            model.RegistartionRequest(inputsArrayValue);
+        } else {
+             model.ContactFormRequest(inputsArrayValue);
+        }
     }
 
-    this.thankYouNote = function() {
+    this.thankYouNote = function(thankYouText) {
         var newForm = document.createElement('div');
         var formWrap = document.createElement('div');
         var photoBlock = document.createElement('div');
         photoBlock.classList.add('photo');
         newForm.classList.add('row');
         formWrap.classList.add('col-xs-6', 'login-block');
-        formWrap.innerHTML = '<span>Thank you for your message! We will write back as soon as possible.</span>';
+        formWrap.innerHTML = thankYouText;
 
         newForm.appendChild(formWrap);
         main.appendChild(newForm);
@@ -509,7 +625,43 @@ function logoDesignView() {
         body.appendChild(lightBox);
     }
 
+    this.loginCorrect = function(data) {
+        var pass = JSON.stringify(main.querySelector('input[type=password]').value);
+        if(data.result == pass) {
+            history.pushState(null, null, ' ');
+            model.NewStateH = '';
+            localStorage.setItem("logged", "true");
+            var loginLink = document.querySelector("a[href='#login']");
+            loginLink.innerHTML = "";
+            loginLink.innerHTML = "Logout";
+            loginLink.href = "#logout";
+            that.update();
+        } else {
+            var errorText = 'Email or password is invalid';
+            that.RegistrationError(errorText);
+        }
+    }
+
+    this.regCorrect = function(data) {
+        main.innerHTML = '';
+        var note = '<span>Thank you for registration! Please login <a href="#login">here'+'\&#187;'+'</a></span>';
+        that.thankYouNote(note);
+    }
+
+    this.RegistrationError = function(errorText) {
+        var form = main.querySelector('form');
+        this.errorBlock.innerHTML = '<span>'+errorText+'</span>';
+        form.insertBefore(this.errorBlock, form.firstChild);
+    }
+
     this.update = function() {
+        console.log(localStorage.getItem("logged"));
+        if( localStorage.getItem("logged") == "true") {
+            model.UserLogged = true;
+        } else {
+            model.UserLogged = false;
+        }
+
         var PageHTML = "";
 
         switch (model.NewStateH)
@@ -521,6 +673,7 @@ function logoDesignView() {
             main.innerHTML = '<h1>Logo Design</h1>'
             model.ContentRequest();
             break;
+          case 'logout':
           case 'login':
             // if(this.newArticle) {
             //     document.body.innerHTML = '';
@@ -550,9 +703,10 @@ function logoDesignView() {
                 if(this.newArticle) {
                     document.body.innerHTML = '';
                 }
+                var note = '<span>Thank you for your message! We will write back as soon as possible.</span>';
                 main.innerHTML = '';
                 model.ContentRequest();
-                that.thankYouNote();
+                that.thankYouNote(note);
                 break;
           default:
             main.className = "";
