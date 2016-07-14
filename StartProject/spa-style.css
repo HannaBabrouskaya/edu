@@ -332,7 +332,27 @@ ul ul {
 }
 
 .box {
-    
+    position: absolute;
+    top: 22%;
+    left: 42%;
+    z-index: 1000;
+    padding: 40px;
+    height: auto;
+    width: 300px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #fff;
+}
+
+.error {
+    color: #b22512;
+}
+
+.logout-note {
+    width: 100%;
+    display: block;
+    text-align: center;
+    padding-bottom: 20px;
 }
 
 .box li {
@@ -344,6 +364,10 @@ ul ul {
     width: 300px;
     background-repeat: no-repeat;
     background-size: cover;
+}
+
+.box .login-link {
+    margin-top: 15px;
 }
 
 /* Media */
