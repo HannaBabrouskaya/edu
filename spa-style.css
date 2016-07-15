@@ -355,11 +355,13 @@ ul ul {
     padding-bottom: 20px;
 }
 
-.box li {
-    position: relative;
+.box.lightbox {
+    background-color: #fff;
     height: 300px;
     width: 300px;
+    background-size: contain;
     background-repeat: no-repeat;
+    background-position: center;
 }
 
 .box .login-link {

@@ -9,14 +9,14 @@ function logoDesignModel() {
     this.UserLogged = false;
 
 
-    var objec = 
-    {
-    "anderson": "0",
-    "binatone": "1",
-    "arimo": "2",
-    "luck": "4",
-    "jb": "2",
-    "liberation": "5"}
+    // var objec = 
+    // {
+    // "anderson": "0",
+    // "binatone": "1",
+    // "arimo": "2",
+    // "luck": "4",
+    // "jb": "2",
+    // "liberation": "5"}
 
 
     this.init = function(myView) {
@@ -40,16 +40,16 @@ function logoDesignModel() {
                 error : this.ErrorHandler
             }
         );
-                                $.ajax(
-                        {
-                            url : "http://fe.it-academy.by/AjaxStringStorage2.php",
-                            type : 'POST',
-                            data : { f : 'INSERT', n : 'BOBROVSKAYA_RATINGS27', v : JSON.stringify(objec)},
-                            cache : false,
-                            success : this.updateRatingObject,
-                            error : this.ErrorHandler
-                        }
-                    )
+                    //             $.ajax(
+                    //     {
+                    //         url : "http://fe.it-academy.by/AjaxStringStorage2.php",
+                    //         type : 'POST',
+                    //         data : { f : 'INSERT', n : 'BOBROVSKAYA_RATINGS27', v : JSON.stringify(objec)},
+                    //         cache : false,
+                    //         success : this.updateRatingObject,
+                    //         error : this.ErrorHandler
+                    //     }
+                    // )
     }
 
     this.ContactFormRequest = function(inputsArrayValue) {
@@ -178,6 +178,7 @@ function logoDesignModel() {
             that.ContentRequest();
         }
         var workItem = data;
+        // that.WorkRatingRequest();
         view.showWorkInfo(workItem);
     }
 
@@ -210,9 +211,9 @@ function logoDesignModel() {
     }
 
     this.WorkRatingsReady = function(data) {
-        console.log("ratings", ratings);
-        view.filterDraw();
-        view.showWorkInfo(data);
+        ratings = data;
+        console.log("ratings", data);
+        view.showWorkInfo(ratings);
     }
 
     this.WorkLogosReady = function(data) {
@@ -512,8 +513,9 @@ function logoDesignView() {
         }
     };
 
-    this.showWorkInfo = function(workItem) {
+    this.showWorkInfo = function(workItem, data) {
         var currentKey;
+        console.log("data", data);
         main.classList.add('works-info');
         main.innerHTML = workItem;
         if(model.NewStateH !== 'contact' && model.NewStateH !== 'about') {
@@ -523,7 +525,7 @@ function logoDesignView() {
                 starRating[i].addEventListener('click', function(event) {
                     that.starsRating(event);
                 });
-                if(this.ratingsObj[currentKey] > i) {
+                if(that.ratingsObj[currentKey] > i) {
                     starRating[i].classList.add('fa-star-selected');
                 }
             }
@@ -726,20 +728,28 @@ function logoDesignView() {
     }
 
     this.sliderShow = function(event) {
+        var m = (window.getComputedStyle(event.currentTarget).getPropertyValue("background-image")).match(/url\(([^)]+)\)/i); 
+
+        console.log("m", m[0]);
+
         var lightBoxBg = document.createElement('div');
         var lightBox = document.createElement('div');
-        var clone = event.currentTarget.cloneNode();
+        // var clone = event.currentTarget.cloneNode();
         var body = document.body;
         body.style.overflow = 'hidden';
         lightBoxBg.classList.add('boxBg');
-        lightBox.classList.add('box');
+        lightBox.classList.add('box', 'lightbox');
+        var newLink = m[0].slice(0, - 6) + '2.png")';
+
+        console.log("newLink", newLink);
+        lightBox.style.backgroundImage = newLink;
 
         lightBoxBg.addEventListener('click', function() { 
             lightBoxBg.remove(); 
             lightBox.remove();
         })
 
-        lightBox.appendChild(clone);
+        // lightBox.appendChild(clone);
         body.appendChild(lightBoxBg);
         body.appendChild(lightBox);
     }
