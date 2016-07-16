@@ -186,15 +186,9 @@ function logoDesignModel() {
         if(view.list == undefined) {
             that.ContentRequest();
         }
-        article = data;
-        that.ArticleRatingRequest();
-    }
-
-    this.RatingsReady = function(data) {
-        ratings = data;
-        console.log("ratings", ratings);
+        var article = data;
         view.filterDraw();
-        view.articleDraw(article, ratings);
+        view.articleDraw(article);
     }
 
     this.ErrorHandler = function(jqXHR, StatusStr, ErrorStr) {
@@ -222,19 +216,6 @@ function logoDesignModel() {
         );
     }
 
-    this.ArticleRatingRequest = function() {
-        $.ajax(
-            {
-                url : "http://fe.it-academy.by/AjaxStringStorage2.php",
-                type : 'POST',
-                data : { f : 'READ', n : 'BOBROVSKAYA_RATING'},
-                cache : false,
-                success : this.RatingsReady,
-                error : this.ErrorHandler
-            }
-        );
-    }
-
     this.getPreviousSiblings = function(el) {
         var siblings = [];
         siblings.push(el);
@@ -251,34 +232,6 @@ function logoDesignModel() {
         }
         return siblings;
     }
-
-    this.sendRating = function(ratingObj) {
-        var UpdatePassword = Math.random();
-        console.log("UpdatePassword", UpdatePassword);
-        $.ajax(
-            {
-                url : "http://fe.it-academy.by/AjaxStringStorage2.php",
-                type : 'POST',
-                data : { f : 'LOCKGET', n : 'BOBROVSKAYA_RATING', p : UpdatePassword },
-                cache : false,
-                success : $.ajax(
-                        {
-                            url : "http://fe.it-academy.by/AjaxStringStorage2.php",
-                            type : 'POST',
-                            data : { f : 'UPDATE', n : 'BOBROVSKAYA_RATING', v : JSON.stringify(ratingObj), p : UpdatePassword },
-                            cache : false,
-                            success : this.updateRatingObject,
-                            error : this.ErrorHandler
-                        }
-                    ),
-                error : this.ErrorHandler
-            }
-        );
-    }
-
-    this.updateRatingObject = function() {
-        console.log("=================");
-    };
 }
 
 function logoDesignView() {
@@ -286,9 +239,6 @@ function logoDesignView() {
     var body = document.body;
     var main = document.createElement('main');
     var that = this;
-
-    this.ratingsServerObj;
-    this.ratingsObj;
 
     this.init = function(myModel) {
         model = myModel;
@@ -327,10 +277,7 @@ function logoDesignView() {
         }
     }
 
-    this.articleDraw = function(article, ratings) {
-        var currentKey;
-        this.ratingsServerObj = ratings;
-        this.ratingsObj = JSON.parse(ratings.result);
+    this.articleDraw = function(article) {
         this.newArticle = document.createElement('div');
         this.newArticle.classList.add('section', 'row');
         main.classList.add('main-article');
@@ -340,7 +287,7 @@ function logoDesignView() {
         body.appendChild(main);
         this.newArticle.appendChild(workList);
 
-        for(var i = 0; i < article.length; i++){
+        for(i = 0; i < article.length; i++){
             for(var key in article[i]){
               if(key == "title") {
                 this.newWorkItem = document.createElement('li');
@@ -349,8 +296,7 @@ function logoDesignView() {
                 var title = document.createElement('h3');
                 var logoWrap = document.createElement('div');
                 logoWrap.classList.add('logo-wrap');
-                currentKey = article[i][key];
-                title.innerHTML = currentKey;
+                title.innerHTML = article[i][key];
                 this.newWorkLink.appendChild(title);
                 this.newWorkLink.appendChild(logoWrap);
               }  
@@ -374,13 +320,9 @@ function logoDesignView() {
             this.newWorkLink.appendChild(rating);
 
             input.setAttribute("value", 1);
-            for(var j = 0; j < 5; j++){
-                // console.log("ratings[i]", ratings[i]);
+            for(j = 0; j < 4; j++){
                 var star = document.createElement('span');
                 star.classList.add('fa', 'fa-star-o');
-                if(this.ratingsObj[currentKey] > j) {
-                    star.classList.add('fa-star-selected');
-                }
                 star.setAttribute("data-rating", j);
                 rating.appendChild(star);
             }
@@ -435,13 +377,6 @@ function logoDesignView() {
 
 
    this.starsRating = function(event) {
-        var currentItemTitle = main.querySelector('h2').innerHTML.toLowerCase(); 
-        this.ratingsObj[currentItemTitle] = parseInt( event.currentTarget.getAttribute('data-rating'));
-        var stringRating = JSON.stringify(this.ratingsObj);
-        this.ratingsServerObj.result = stringRating;
-        console.log("this.ratingsServerObj", this.ratingsServerObj);
-        model.sendRating(this.ratingsServerObj);
-
         this.starRating = document.querySelectorAll('.star-rating .fa');
         for(i = 0; i < this.starRating.length; i++) {
             event.currentTarget.parentNode.classList.add('active');
@@ -471,9 +406,7 @@ function logoDesignView() {
         if(model.NewStateH !== 'contact' && model.NewStateH !== 'about') {
             var starRating = main.querySelectorAll('.star-rating .fa');
             for(i = 0; i < starRating.length; i++) {
-                starRating[i].addEventListener('click', function(event) {
-                    that.starsRating(event);
-                });
+                starRating[i].addEventListener('click', that.starsRating);
             }
             model.WorkLogosRequest();
         } 
