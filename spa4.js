@@ -3,6 +3,8 @@ function logoDesignModel() {
     var view = null;
     this.NewStateH = '';
     this.articleId;
+    this.article;
+    this.ratings;
     // this.filterState - '';
     // this.filterName- '';
 
@@ -93,7 +95,7 @@ function logoDesignModel() {
         view.loginCorrect(data);
     }
 
-    this.RegistartionRequest = function(inputsArrayValue) {
+    this.RegistrationRequest = function(inputsArrayValue) {
         var name = inputsArrayValue[0];
         var pass = inputsArrayValue[1];
         var passRepeat = inputsArrayValue[2];
@@ -101,19 +103,19 @@ function logoDesignModel() {
             JSON.stringify(name);
             var res = name.replace(".", "").replace('@', '');
             name = res;
-            // var AjaxHandler = "http://fe.it-academy.by/AjaxStringStorage2.php";
-            // $.ajax(
-            //     {
-            //         url : AjaxHandler,
-            //         type : 'POST',
-            //         dataType : 'JSON',
-            //         data : { f : 'INSERT', n : name,
-            //         v : JSON.stringify(pass) },
-            //         cache : false,
-            //         success : this.RegistrationFormReady,
-            //         error : this.ErrorHandler
-            //     }
-            // );
+            var AjaxHandler = "http://fe.it-academy.by/AjaxStringStorage2.php";
+            $.ajax(
+                {
+                    url : AjaxHandler,
+                    type : 'POST',
+                    dataType : 'JSON',
+                    data : { f : 'INSERT', n : name,
+                    v : JSON.stringify(pass) },
+                    cache : false,
+                    success : this.RegistrationFormReady,
+                    error : this.ErrorHandler
+                }
+            );
         } else if (pass !== passRepeat) {
             view.RegistrationError("Passwords dismatch");
         } else {
@@ -173,13 +175,15 @@ function logoDesignModel() {
         );
     }
 
+    this.workItem;
+
     this.WorkInfoReady = function(data) {
         if(view.list == undefined) {
             that.ContentRequest();
         }
-        var workItem = data;
-        // that.WorkRatingRequest();
-        view.showWorkInfo(workItem);
+        that.workItem = data;
+        that.WorkRatingRequest();
+        // view.showWorkInfo(workItem);
     }
 
     this.WorkLogosRequest = function() {
@@ -211,9 +215,9 @@ function logoDesignModel() {
     }
 
     this.WorkRatingsReady = function(data) {
-        ratings = data;
-        console.log("ratings", data);
-        view.showWorkInfo(ratings);
+        that.ratings = data;
+        var ratingsFormatted = JSON.parse(that.ratings.result)
+        view.showWorkInfo(that.workItem, ratingsFormatted);
     }
 
     this.WorkLogosReady = function(data) {
@@ -228,15 +232,37 @@ function logoDesignModel() {
         if(view.list == undefined) {
             that.ContentRequest();
         }
-        article = data;
+        that.article = data;
         that.ArticleRatingRequest();
     }
 
+    this.implementFilter = function() {
+        if(that.filterName == "filter=alphabet") {
+            if(that.filterState == "sort=asc") {
+                that.article.sort(that.sortByAlfTitle);
+            } else if(that.filterState == "sort=desc") {
+                that.article.sort(that.sortByAlfTitleInverse);
+            }        
+        } else if(that.filterName == "filter=rating") {
+            if(that.filterState == "sort=asc") {
+                that.article.sort(that.sortByRating);
+            } else if(that.filterState == "sort=desc") {
+                that.article.sort(that.sortByRatingInverse);
+            } 
+        }
+    };
+
     this.RatingsReady = function(data) {
-        ratings = data;
-        console.log("ratings", ratings);
-        view.filterDraw();
-        view.articleDraw(article, ratings);
+        that.ratings = data;
+        that.ratingsItemObj = JSON.parse(that.ratings.result);
+        that.article.forEach(function(item, index, array) {
+            item["rating"] = that.ratingsItemObj[item.title];
+        });
+        if(that.filterName) {
+            that.implementFilter();            
+        }
+        view.filterDraw(that.filterName, that.filterState);
+        view.articleDraw(that.article, that.ratings);
     }
 
     this.ErrorHandler = function(jqXHR, StatusStr, ErrorStr) {
@@ -244,10 +270,23 @@ function logoDesignModel() {
     }
 
     this.sortByAlfTitle = function(A,B) {
-        console.log("sss");
         if(A.title > B.title) return 1;
-        if(A.title < B.title) return -1; 
-        // console.log(); 
+        if(A.title < B.title) return -1;
+    }
+
+    this.sortByAlfTitleInverse = function(A,B) {
+        if(A.title < B.title) return 1;
+        if(A.title > B.title) return -1;
+    }
+
+    this.sortByRating = function(A,B) {
+        if(A.rating > B.rating) return 1;
+        if(A.rating < B.rating) return -1;
+    }
+
+    this.sortByRatingInverse = function(A,B) {
+        if(A.rating < B.rating) return 1;
+        if(A.rating > B.rating) return -1;
     }
 
     this.ArticleRequest = function() {
@@ -345,7 +384,7 @@ function logoDesignView() {
         }
     }
 
-    this.filterDraw = function(newClass, hashfilter) {
+    this.filterDraw = function(filterType, filterOrder) {
         var filtersRow = document.createElement('div');
         filtersRow.classList.add('section', 'row', 'filters-wrap');
         var filters = document.createElement('div');
@@ -353,26 +392,43 @@ function logoDesignView() {
         filtersRow.appendChild(filters);
 
         for(i=0; i < 2; i++){
-            var filterItem = document.createElement('div');
+            var filterItem = document.createElement('a');
             filterItem.classList.add('col-md-5', 'filter');
             filters.appendChild(filterItem);
         }
         var ratingFilter = filters.firstChild;
-        var alfFilter = filters.lastChild; 
+        var alfFilter = filters.lastChild;
         ratingFilter.classList.add('rating-filter');
-        ratingFilter.innerHTML = '<span>Sort by Rating</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
         alfFilter.classList.add('alf-filter');
-        alfFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
-        main.insertBefore(filtersRow, main.firstChild);
+        
+        if(filterType == "filter=alphabet") {
+            ratingFilter.innerHTML = '<span>Sort by Rating</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
+            ratingFilter.href = '#works&filter=rating&sort=asc';
+            if(filterOrder == "sort=asc") {
+                alfFilter.href = '#works&filter=alphabet&sort=desc';
+                alfFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-up" aria-hidden="true"></i>';
+            } else if(filterOrder == "sort=desc") {
+                alfFilter.href = '#works&filter=alphabet&sort=asc';
+                alfFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
+            }  
 
-        if(newClass) {
-            // console.log(document.getElementsByClassName('.sorted'));
-            // if(alfFilter.classList.contains(''+newClass+'')) {
-            //     // console.log(alfFilter.classList.contains(''+newClass+''));
-            //     alfFilter.classList.remove(''+newClass+'');
-            // }
-            alfFilter.classList.toggle(''+newClass+'');
+        } else if (filterType == "filter=rating") {
+            alfFilter.href = '#works&filter=alphabet&sort=asc';
+            alfFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
+            if(filterOrder == "sort=asc") {
+                ratingFilter.href = '#works&filter=rating&sort=desc';
+                ratingFilter.innerHTML = '<span>Sort by Rating</span>' + '<i class="fa fa-caret-up" aria-hidden="true"></i>';
+            } else if(filterOrder == "sort=desc") {
+                ratingFilter.href = '#works&filter=rating&sort=asc';
+                ratingFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
+            }
+        } else {
+            ratingFilter.href = '#works&filter=rating&sort=asc';
+            ratingFilter.innerHTML = '<span>Sort by Rating</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
+            alfFilter.href = '#works&filter=alphabet&sort=asc';
+            alfFilter.innerHTML = '<span>Sort by Alphabet</span>' + '<i class="fa fa-caret-down" aria-hidden="true"></i>';
         }
+        main.insertBefore(filtersRow, main.firstChild);
     }
 
     this.articleDraw = function(article, ratings) {
@@ -426,7 +482,7 @@ function logoDesignView() {
                 // console.log("ratings[i]", ratings[i]);
                 var star = document.createElement('span');
                 star.classList.add('fa', 'fa-star-o');
-                if(this.ratingsObj[currentKey] > j) {
+                if(article[i].rating > j) {
                     star.classList.add('fa-star-selected');
                 }
                 star.setAttribute("data-rating", j);
@@ -438,21 +494,6 @@ function logoDesignView() {
 
         var ratingFilter = main.querySelector('.rating-filter');
         var alfFilter = main.querySelector('.alf-filter');
-        this.hashAsc = 'asc';
-        this.hashDesc = 'desc';
-
-        this.filterChange = function() {
-            // model.NewStateH += '_alf-filter';
-            console.log("model.NewStateH");
-            article.sort(model.sortByAlfTitle);
-            main.innerHTML = '';
-            //console.log(window.location.hash.substr(1)+'asc');
-            //window.location.hash.substr(1).split("&");
-
-            that.filterDraw("sorted", that.hashAsc);
-            that.articleDraw(article);
-        }
-        alfFilter.addEventListener('click', that.filterChange);
     }
 
     this.workInfoShow = function(event) {
@@ -513,9 +554,8 @@ function logoDesignView() {
         }
     };
 
-    this.showWorkInfo = function(workItem, data) {
+    this.showWorkInfo = function(workItem, ratingObject) {
         var currentKey;
-        console.log("data", data);
         main.classList.add('works-info');
         main.innerHTML = workItem;
         if(model.NewStateH !== 'contact' && model.NewStateH !== 'about') {
@@ -525,7 +565,7 @@ function logoDesignView() {
                 starRating[i].addEventListener('click', function(event) {
                     that.starsRating(event);
                 });
-                if(that.ratingsObj[currentKey] > i) {
+                if(ratingObject[currentKey] > i) {
                     starRating[i].classList.add('fa-star-selected');
                 }
             }
@@ -707,7 +747,7 @@ function logoDesignView() {
         if(formItem.classList.contains('login-form') ) {
             model.LoginRequest(inputsArrayValue);
         } else if (formItem.classList.contains('registration-form') ) {
-            model.RegistartionRequest(inputsArrayValue);
+            model.RegistrationRequest(inputsArrayValue);
         } else {
              model.ContactFormRequest(inputsArrayValue);
         }
@@ -793,6 +833,7 @@ function logoDesignView() {
 
         var PageHTML = "";
 
+        console.log("model.NewStateH", model.NewStateH);
         switch (model.NewStateH)
         {
           case '':
@@ -866,6 +907,7 @@ function logoDesignController() {
         var URLHash = window.location.hash;
         var StateStr = URLHash.substr(1);
 
+
         if ( StateStr != "" ) {
             var PartsA = StateStr.split("&");
             model.NewStateH = PartsA[0];
@@ -873,8 +915,11 @@ function logoDesignController() {
                 console.log(PartsA[2]);
                 model.filterState = PartsA[2];
                 model.filterName = PartsA[1];
+            } else {
+                model.filterState = "";
+                model.filterName = "";
             }
-            model.articleId = StateStr;
+            model.articleId = model.NewStateH;
             console.log(model.articleId);
             view.update(model.NewStateH);
         } else {
